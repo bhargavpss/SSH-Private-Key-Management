@@ -4,11 +4,12 @@ import base64
 from os import chmod
 from Crypto.PublicKey import RSA
 
-client = boto3.client('secretsmanager')
+secretsmanager = boto3.client('secretsmanager')
+ec2 = boto3.client('ec2')
 
 def lambda_handler(event, context):
 	resources = event['resources']
-	response = client.list_secrets()
+	response = secretsmanager.list_secrets()
         namelist = []
         for i in response['SecretList']:
             namelist.append(i['Name'])
@@ -24,15 +25,31 @@ def lambda_handler(event, context):
 	        if instance_id in namelist:            # Don't do anything if the key is already present. Could be a stopped instance which is just started
 	            continue
 	        else:
-	            response = client.create_secret(
+		    response = ec2.describe_instances(
+                	InstanceIds=[
+        			instance_id,
+    			],
+		    )
+		    for i in  response['Reservations'][0]['Instances'][0]['Tags']:
+		        if i['Key'] == 'microservice':
+		       	    microservice = i['Value']
+        		    break
+    			else:
+        		    continue
+		    
+	            response = secretsmanager.create_secret(
 	                Name=instance_id,
-	                Description='string',
+	                Description='SSH Key Pair for Instance',
                         SecretString='{"public_key":"'+public_key+'","private_key":"'+encoded_key+'"}',
 	                Tags=[
 	                        {
 	           	            'Key': 'InstanceARN',
 			            'Value': arn
 			        },
+				{
+				    'Key': 'microservice',
+				    'Value': microservice
+				}
 			     ]
 		    )	
 		    return None
@@ -41,7 +58,7 @@ def lambda_handler(event, context):
 	    for arn in resources:
 	        instance_id = arn.split('/')[1]
 	        if instance_id in namelist:
-	            response = client.delete_secret(
+	            response = secretsmanager.delete_secret(
 	                SecretId=instance_id,
 	                RecoveryWindowInDays=7,
 	                ForceDeleteWithoutRecovery=False
