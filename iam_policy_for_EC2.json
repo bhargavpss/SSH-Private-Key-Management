@@ -1,0 +1,19 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "secretsmanager:DescribeSecret",
+                "secretsmanager:List*"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Effect": "Allow",
+            "Action": "secretsmanager:GetSecretValue",
+            "Resource": "*",
+            "Condition": { "StringEquals": { "secretsmanager:ResourceTag/InstanceARN": "${ec2:SourceInstanceARN}" } }
+        }
+    ]
+}
