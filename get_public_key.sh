@@ -41,6 +41,6 @@ instance_id=$(curl -s http://169.254.169.254/latest/meta-data/instance-id) # i-0
 export AWS_DEFAULT_REGION=${region}
 
 response=$(aws secretsmanager get-secret-value --secret-id ${instance_id} | jq -r .SecretString | jq -r .public_key)
-} > /tmp/AuthorizedKeysCommand.stdout
+} >> /tmp/AuthorizedKeysCommand.stdout
 
 echo ${response}
