@@ -1,6 +1,7 @@
 import sys
 import boto3
 import base64
+import traceback
 from os import chmod
 from Crypto.PublicKey import RSA
 
@@ -9,8 +10,11 @@ ec2 = boto3.client('ec2')
 
 def lambda_handler(event, context):
 	resources = event['resources']
-	response = secretsmanager.list_secrets()
-        secretslist = {}
+	try:
+	    response = secretsmanager.list_secrets()
+        except:
+	    print traceback.format_exc()
+	secretslist = {}
         for i in response['SecretList']:
             secretslist[i['Name']] = None
 
@@ -25,11 +29,15 @@ def lambda_handler(event, context):
 	        if instance_id in secretslist:            # Don't do anything if the key is already present. Could be a stopped instance which is just started
 	            continue
 	        else:
-		    response = ec2.describe_instances(
-                	InstanceIds=[
-        			instance_id,
-    			],
-		    )
+		    try:
+		    	response = ec2.describe_instances(
+                		InstanceIds=[
+        				instance_id,
+    				],
+		    	)
+		    except:
+			print traceback.format_exec()
+
 		    for i in  response['Reservations'][0]['Instances'][0]['Tags']:
 		        if i['Key'] == 'microservice':
 		       	    microservice = i['Value']
@@ -37,36 +45,42 @@ def lambda_handler(event, context):
     			else:
         		    continue
 		    
-	            response = secretsmanager.create_secret(
-	                Name=instance_id,
-	                Description='SSH Key Pair for Instance',
-                        SecretString='{"public_key":"'+public_key+'","private_key":"'+encoded_key+'"}',
-	                Tags=[
-	                        {
-	           	            'Key': 'InstanceARN',
-			            'Value': arn
-			        },
-				{
-				    'Key': 'microservice',
-				    'Value': microservice
-				}
-			     ]
-		    )	
+		    try:		    
+    	                response = secretsmanager.create_secret(
+	                    Name=instance_id,
+	                    Description='SSH Key Pair for Instance',
+                            SecretString='{"public_key":"'+public_key+'","private_key":"'+encoded_key+'"}',
+	                    Tags=[
+	                            {
+	           	                'Key': 'InstanceARN',
+			                'Value': arn
+			            },
+				    {
+				        'Key': 'microservice',
+				        'Value': microservice
+				    }
+			         ]
+		        )	
+		    except:
+			print traceback.format_exec()
+
 		    return None
 
 	elif event['detail']['state'] == 'terminated':
 	    for arn in resources:
 	        instance_id = arn.split('/')[1]
 	        if instance_id in secretslist:
-	            response = secretsmanager.delete_secret(
-	                SecretId=instance_id,
-	                RecoveryWindowInDays=7,
-	                ForceDeleteWithoutRecovery=False
-	            )
+	            try:
+			response = secretsmanager.delete_secret(
+	                    SecretId=instance_id,
+	                    RecoveryWindowInDays=7,
+	                    ForceDeleteWithoutRecovery=False
+	                )
+		    except:
+			print traceback.format_exec()
+
 	        else:                                # Don't do anything if the key is not present. Instance is not registered in SecretsManager
 	    	    continue
 		    return None
 
-#event = {"resources":["arn:aws:ec2:us-east-1:123456789012:instance/i-0cc7f7228502b682bupdated"], "detail":{"state":"running","instance-id":"i-0cc7f7228502b682b"}}
-#
-#lambda_handler(event, None)
+
