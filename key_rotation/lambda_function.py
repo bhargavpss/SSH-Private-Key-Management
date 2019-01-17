@@ -12,9 +12,9 @@ def lambda_handler(event, context):
     response = secrets_manager.list_secrets(
         MaxResults=99
     )
-    secretslist = []
+    secretslist = {}
     for i in response['SecretList']:
-        secretslist.append(i['Name'])
+        secretslist[i['Name']] = None
     
     response = ec2.describe_instances(
         Filters=[
