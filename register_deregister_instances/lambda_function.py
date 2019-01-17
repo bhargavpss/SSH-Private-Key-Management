@@ -10,9 +10,9 @@ ec2 = boto3.client('ec2')
 def lambda_handler(event, context):
 	resources = event['resources']
 	response = secretsmanager.list_secrets()
-        namelist = []
+        secretslist = {}
         for i in response['SecretList']:
-            namelist.append(i['Name'])
+            secretslist[i['Name']] = None
 
 	if event['detail']['state'] == 'running':
 	    key = RSA.generate(2048)                   # Generating Key Pair
@@ -22,7 +22,7 @@ def lambda_handler(event, context):
 	    public_key = pubkey.exportKey('OpenSSH')
 	    for arn in resources:
 	        instance_id = arn.split('/')[1]
-	        if instance_id in namelist:            # Don't do anything if the key is already present. Could be a stopped instance which is just started
+	        if instance_id in secretslist:            # Don't do anything if the key is already present. Could be a stopped instance which is just started
 	            continue
 	        else:
 		    response = ec2.describe_instances(
@@ -57,7 +57,7 @@ def lambda_handler(event, context):
 	elif event['detail']['state'] == 'terminated':
 	    for arn in resources:
 	        instance_id = arn.split('/')[1]
-	        if instance_id in namelist:
+	        if instance_id in secretslist:
 	            response = secretsmanager.delete_secret(
 	                SecretId=instance_id,
 	                RecoveryWindowInDays=7,
