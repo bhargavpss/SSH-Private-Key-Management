@@ -64,7 +64,7 @@ def lambda_handler(event, context):
 		    except:
 			print traceback.format_exec()
 
-		    return None
+            return None
 
 	elif event['detail']['state'] == 'terminated':
 	    for arn in resources:
@@ -81,6 +81,6 @@ def lambda_handler(event, context):
 
 	        else:                                # Don't do anything if the key is not present. Instance is not registered in SecretsManager
 	    	    continue
-		    return None
+	    return None
 
 
