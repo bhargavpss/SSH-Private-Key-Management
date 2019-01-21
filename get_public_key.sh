@@ -35,7 +35,8 @@ fi
 
 # How do you know the Instance Details?
 
-region=$(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone | cut -c 1-9)
+# region=$(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone | cut -c 1-9)
+region=$(curl -s http://169.254.169.254/latest/dynamic/instance-identity/document/ | jq -r .region)
 instance_id=$(curl -s http://169.254.169.254/latest/meta-data/instance-id) # i-0cc7f7228502b682b
 
 export AWS_DEFAULT_REGION=${region}

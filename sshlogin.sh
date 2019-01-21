@@ -7,9 +7,13 @@ if [ -z $1 ]; then
 	exit 1
 fi
 
-# i-0cc7f7228502b682b
 instance_id=$1
 
+read -p "enter AWS_ACCESS_KEY: " AWS_ACCESS_KEY_ID
+read -p "enter AWS_SECRET_KEY: " AWS_SECRET_ACCESS_KEY
+
+export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
 login_user='ubuntu'
 
 if [ ! -x /usr/bin/curl ]; then
@@ -17,7 +21,8 @@ if [ ! -x /usr/bin/curl ]; then
 	exit 1
 fi
 
-region=$(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone | cut -c 1-9)
+# region=$(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone | cut -c 1-9)
+region=$(curl -s http://169.254.169.254/latest/dynamic/instance-identity/document/ | jq -r .region)
 
 install_aws_cli()
 {
@@ -41,11 +46,18 @@ fi
 get_instance_private_dns()
 {
 	local result=$(aws ec2 describe-instances --filters "Name=instance-id,Values=${instance_id}" | jq -r .Reservations[].Instances[].NetworkInterfaces[].PrivateDnsName)
+	if [ -z $result ]; then
+	    return 1
+	fi
 	private_dns=${result}
 	return 0
 }
 
 get_instance_private_dns
+if [ $? -ne 0 ]; then
+	exit 1
+fi
+
 if [ -z ${private_dns} ]; then
 	echo Given InstanceId: \"$instance_id\" not found
 	exit 1
