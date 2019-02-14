@@ -10,7 +10,7 @@ if [ ! -d ~/.sshlogin ]; then
 fi
 
 # SSH Login Script
-{
+
 
 instance_id=$1
 
@@ -60,6 +60,7 @@ get_private_key()
 }
 
 ####################################################################################################################################
+{
 
 [[ ":$PATH:" != *":/usr/local/bin:"* ]] && PATH="${PATH}:/usr/local/bin/"
 
@@ -100,6 +101,7 @@ fi
 region=$(curl -s http://169.254.169.254/latest/dynamic/instance-identity/document/ | jq -r .region)
 
 export AWS_DEFAULT_REGION=${region}
+} > ~/.sshlogin/sshlogin.stdout
 
 get_instance_private_dns
 if [ -z ${private_dns} ]; then
@@ -118,6 +120,6 @@ fi
 
 echo ${encoded_key} | base64 --decode > ~/.sshlogin/${file_name}
 chmod 600 ~/.sshlogin/${file_name}
-} > ~/.sshlogin/sshlogin.stdout
-ssh -i ~/.sshlogin/${file_name} ${login_user}@${private_dns} && rm -f ~/${file_name}
+
+ssh -i ~/.sshlogin/${file_name} ${login_user}@${private_dns} && rm -f ~/${file_namenstance_private_dns}
 
